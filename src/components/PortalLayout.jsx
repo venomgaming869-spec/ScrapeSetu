@@ -1,11 +1,13 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
+import scrapSetuLogo from '../../figmaUI/logo.jpeg'
+import collectorBanner from '../../figmaUI/banner.png'
 import { useAuth } from '../context/AuthContext'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { syncPendingLots } from '../services/scrapsetu'
 import {
-  CircleHelp, ClipboardList, Coins, FileClock, LayoutDashboard, LogOut, PackagePlus,
-  Recycle, ShieldCheck, Tags, Truck, Wallet, BadgeDollarSign, CircleCheck,
+  ChevronRight, CircleHelp, ClipboardList, Coins, FileClock, LayoutDashboard, LogOut, PackagePlus,
+  ReceiptText, Recycle, ShieldCheck, Tags, Truck, Wallet, BadgeDollarSign, CircleCheck,
 } from 'lucide-react'
 
 const navigation = {
@@ -14,8 +16,8 @@ const navigation = {
     { label: 'Sell Scrap', to: '/collector/create-lot', icon: PackagePlus },
     { label: 'My Lots', to: '/collector/lots', icon: ClipboardList },
     { label: 'Find Recycler', to: '/collector/recyclers', icon: Recycle },
-    { label: 'Offers', to: '/collector/offers', icon: Coins },
-    { label: 'Earnings', to: '/collector/transactions', icon: Wallet },
+    { label: 'Earnings', to: '/collector/transactions', icon: Wallet, view: 'earnings' },
+    { label: 'Transactions', to: '/collector/transactions?view=transactions', icon: ReceiptText, view: 'transactions', desktopOnly: true },
   ],
   recycler: [
     { label: 'Dashboard', to: '/recycler', icon: LayoutDashboard, end: true },
@@ -41,7 +43,6 @@ const titles = {
   '/collector/create-lot': ['Sell scrap', 'Select or correct the material category.'],
   '/collector/lots': ['My lots', 'Track the progress of your e-waste.'],
   '/collector/recyclers': ['Find a recycler', 'Verified recyclers that accept your material.'],
-  '/collector/offers': ['Offers', 'Compare offers from verified recyclers.'],
   '/collector/transactions': ['Earnings', 'Track completed sales and payments.'],
   '/recycler': ['Recycler Dashboard', 'Pickup queue, accepted lots and payment status.'],
   '/recycler/lots': ['New lots', 'Material requests matched to your accepted categories.'],
@@ -63,11 +64,16 @@ export default function PortalLayout() {
   const location = useLocation()
   const online = useOnlineStatus()
   const role = profile?.role || location.pathname.split('/')[1] || 'collector'
+  const isCollectorDashboard = role === 'collector' && location.pathname === '/collector'
   const navItems = navigation[role] || navigation.collector
   const mobileItems = role === 'collector'
-    ? navItems.filter((item) => ['/collector', '/collector/lots', '/collector/offers', '/collector/transactions'].includes(item.to))
+    ? navItems.filter((item) => !item.desktopOnly && ['/collector', '/collector/lots', '/collector/transactions'].includes(item.to.split('?')[0]))
     : navItems.slice(0, 4)
   const [title, subtitle] = titles[location.pathname] || [role === 'admin' ? 'Admin overview' : 'Lot details', 'ScrapSetu transaction workspace.']
+  const displayName = profile?.name?.trim() || 'Account'
+  const avatarInitials = displayName === 'Account'
+    ? (profile?.role || role).slice(0, 1).toUpperCase()
+    : displayName.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
 
   useEffect(() => {
     if (role !== 'collector' || !online || !profile?.id) return undefined
@@ -80,15 +86,18 @@ export default function PortalLayout() {
   }, [online, profile?.id, role])
 
   return (
-    <div className="portal">
-      <aside className="sidebar">
-        <NavLink className="brand-lockup" to={`/${role}`}>
-          <strong>SCRAPSETU</strong>
-          <span>KABADIWALA CONNECT</span>
+    <div className={`portal${role === 'collector' ? ' portal-collector' : ''}`}>
+      <aside className={`sidebar${role === 'collector' ? ' sidebar-collector' : ''}`}>
+        <NavLink className={`brand-lockup${role === 'collector' ? ' collector-brand' : ''}`} to={`/${role}`}>
+          {role === 'collector' ? <><img className="collector-brand-logo" src={scrapSetuLogo} alt="ScrapSetu logo" /><strong>ScrapSetu</strong></> : <><strong>SCRAPSETU</strong><span>KABADIWALA CONNECT</span></>}
         </NavLink>
         <nav className="side-nav" aria-label={`${role} navigation`}>
-          {navItems.map(({ label, to, icon: Icon, end }) => (
-            <NavLink key={to} to={to} end={end} className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
+          {navItems.map(({ label, to, icon: Icon, end, view }) => (
+            <NavLink key={label} to={to} end={end} className={({ isActive }) => {
+              const transactionViewActive = view && location.pathname === '/collector/transactions'
+                && (view === 'transactions' ? location.search === '?view=transactions' : !location.search)
+              return `nav-link${(view ? transactionViewActive : isActive) ? ' active' : ''}`
+            }}>
               <Icon size={18} strokeWidth={1.8} />
               <span>{label}</span>
             </NavLink>
@@ -101,17 +110,25 @@ export default function PortalLayout() {
           <button className="quiet-link logout" onClick={signOut} type="button" aria-label="Sign out">
             <LogOut size={16} /> Sign out
           </button>
+          {role === 'collector' && <div className="collector-account">
+            <span className="collector-avatar" aria-hidden="true">{avatarInitials}</span>
+            <span className="collector-account-copy"><strong>{displayName}</strong><small>{profile?.role || role}</small></span>
+            <ChevronRight size={17} aria-hidden="true" />
+          </div>}
         </div>
       </aside>
       <div className="portal-main">
-        <header className="portal-header">
+        {!isCollectorDashboard && <header className="portal-header">
           <div>
             <h1>{title}</h1>
             <p>{subtitle}</p>
           </div>
           <span className="role-chip">{role[0].toUpperCase() + role.slice(1)}</span>
-        </header>
-        <main className="portal-content"><Outlet /></main>
+        </header>}
+        <main className="portal-content">
+          {isCollectorDashboard && <img className="collector-dashboard-banner" src={collectorBanner} alt="ScrapSetu recycling banner" />}
+          <Outlet />
+        </main>
       </div>
       <nav className="mobile-nav" aria-label="Mobile navigation">
         {mobileItems.map(({ label, to, icon: Icon, end }) => (

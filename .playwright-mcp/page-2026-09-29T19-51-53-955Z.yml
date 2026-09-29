@@ -1,0 +1,58 @@
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - link "ScrapSetu home" [ref=e5] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e14]:
+        - strong [ref=e15]: SCRAPSETU
+        - generic [ref=e16]: E-WASTE NETWORK
+    - navigation "Main navigation" [ref=e17]:
+      - link "Home" [ref=e18] [cursor=pointer]:
+        - /url: "#home"
+      - link "How it works" [ref=e19] [cursor=pointer]:
+        - /url: "#how-it-works"
+      - link "The network" [ref=e20] [cursor=pointer]:
+        - /url: "#network"
+      - link "Impact" [ref=e21] [cursor=pointer]:
+        - /url: "#impact"
+    - generic [ref=e22]:
+      - generic [ref=e23]: Collector + recycler network
+      - link "Sign in" [ref=e25] [cursor=pointer]:
+        - /url: /login
+  - generic [ref=e29]:
+    - generic [ref=e30]:
+      - generic [ref=e31]: SMART E-WASTE CONNECTOR
+      - heading "SCRAP SETU" [level=1] [ref=e33]:
+        - generic [ref=e34]: SCRAP
+        - generic [ref=e35]: SETU
+      - paragraph [ref=e36]: Connecting collectors with responsible recyclers.
+      - generic [ref=e37]:
+        - link "Enter ScrapSetu" [ref=e38] [cursor=pointer]:
+          - /url: /register
+        - link "Recycler login" [ref=e41] [cursor=pointer]:
+          - /url: /login
+      - generic [ref=e45]:
+        - generic [ref=e46]: Collect
+        - generic [ref=e48]: Value
+        - generic [ref=e50]: Match
+        - generic [ref=e52]: Sell
+        - generic [ref=e54]: Trace
+        - generic [ref=e56]: Recycle
+    - generic [ref=e57]:
+      - generic [ref=e58]: CHOOSE YOUR SIDE
+      - link "FOR COLLECTORS Collector Collect and connect e-waste." [ref=e59] [cursor=pointer]:
+        - /url: /register
+        - generic [ref=e64]:
+          - generic [ref=e65]: FOR COLLECTORS
+          - strong [ref=e66]: Collector
+          - generic [ref=e67]: Collect and connect e-waste.
+      - link "FOR RECYCLERS Recycler Receive and recycle responsibly." [ref=e72] [cursor=pointer]:
+        - /url: /login
+        - generic [ref=e81]:
+          - generic [ref=e82]: FOR RECYCLERS
+          - strong [ref=e83]: Recycler
+          - generic [ref=e84]: Receive and recycle responsibly.
+  - generic [ref=e89]:
+    - generic [ref=e90]:
+      - text: A FORMAL RECYCLING PATHWAY
+      - heading "From local collection to authorized recycling." [level=2] [ref=e91]
+    - paragraph [ref=e92]: ScrapSetu gives collectors indicative price visibility, connects each lot to compatible verified recyclers, and records offers, handover, payment, and traceability in one place.

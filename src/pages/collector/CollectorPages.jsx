@@ -1,14 +1,58 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Camera, Check, ChevronLeft, ChevronRight, ImagePlus, MapPin, PackagePlus, RefreshCw, Scale, ShieldCheck, Upload, Wallet } from 'lucide-react'
+import { Boxes, Camera, Check, ChevronLeft, ChevronRight, CircleCheck, ClipboardList, HandCoins, ImagePlus, MapPin, PackagePlus, RefreshCw, Scale, ShieldCheck, Upload, Wallet, Zap } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useOnlineStatus } from '../../hooks/useOnlineStatus'
 import { listQueuedLots, makeLocalId, removeQueuedLot, saveQueuedLot } from '../../offline/lotQueue'
 import { getBenchmark, getClient, getCollectorTransaction, getCollectorTransactions, getLot, getMaterials, getOwnLots, getSignedPhoto, getSuitableRecyclers, getTraceability, syncPendingLots } from '../../services/scrapsetu'
 import { EmptyState, ErrorState, LoadingState, PageHeading, Panel, StatusBadge, TraceTimeline, formatCurrency, useLoad } from '../../components/WorkflowUI'
 
-function Metric({ label, value, note, icon: Icon }) {
-  return <Panel className="metric-panel"><span className="metric-label">{label}</span><strong className="metric-value">{value}</strong><span className="metric-note">{Icon && <Icon size={13} />}{note}</span></Panel>
+function dailySeries(records, timestampFor, amountFor = () => 1) {
+  const today = new Date()
+  const keyFor = (date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+  const keys = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6 + index)
+    return keyFor(date)
+  })
+  const totals = new Map(keys.map((key) => [key, 0]))
+  for (const record of records) {
+    const date = new Date(timestampFor(record))
+    if (Number.isNaN(date.getTime())) continue
+    const key = keyFor(date)
+    if (!totals.has(key)) continue
+    const amount = Number(amountFor(record))
+    if (Number.isFinite(amount)) totals.set(key, totals.get(key) + amount)
+  }
+  return keys.map((key) => totals.get(key))
+}
+
+function Sparkline({ values }) {
+  const maximum = Math.max(...values)
+  const points = values.map((value, index) => `${3 + index * (94 / (values.length - 1))},${29 - (maximum ? value / maximum : 0) * 25}`)
+  const line = `M ${points.join(' L ')}`
+  const area = `${line} L 97,32 L 3,32 Z`
+  return <svg className="metric-sparkline" viewBox="0 0 100 34" preserveAspectRatio="none" aria-hidden="true">
+    <path d={area} fill="currentColor" opacity=".13" />
+    <path d={line} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+}
+
+function Metric({ label, value, note, icon: Icon, tone, graph }) {
+  return <Panel className={`metric-panel dashboard-metric dashboard-metric-${tone}`}>
+    <span className="dashboard-metric-icon" aria-hidden="true"><Icon size={19} strokeWidth={1.8} /></span>
+    <span className="metric-label">{label}</span>
+    <strong className="metric-value">{value}</strong>
+    <span className="metric-note">{note}</span>
+    <Sparkline values={graph} />
+  </Panel>
+}
+
+function DashboardSectionHeading({ icon: Icon, title, action, tone }) {
+  return <div className="dashboard-section-heading">
+    <span className={`dashboard-section-icon dashboard-section-icon-${tone}`} aria-hidden="true"><Icon size={17} strokeWidth={1.9} /></span>
+    <h2>{title}</h2>
+    {action}
+  </div>
 }
 
 export function CollectorDashboard() {
@@ -42,20 +86,24 @@ export function CollectorDashboard() {
   const completed = rows.filter((lot) => lot.status === 'completed')
   const earnings = transactions.filter((transaction) => transaction.status === 'paid')
     .reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0)
-  return <div className="page-stack">
-    <div className="welcome-row"><div><span className="eyebrow">COLLECTOR PORTAL</span><h2>Turn e-waste into value</h2><p>Capture a lot and connect with verified recyclers.</p></div><Link to="/collector/create-lot" className="button button-primary"><PackagePlus size={17} /> Add E-Waste</Link></div>
+  const activeLotsGraph = dailySeries(rows.filter((lot) => lot.status !== 'completed'), (lot) => lot.created_at)
+  const offersGraph = dailySeries(rows.flatMap((lot) => (lot.offers || []).filter((offer) => offer.status === 'pending')), (offer) => offer.created_at)
+  const completedSalesGraph = dailySeries(completed, (lot) => lot.updated_at)
+  const earningsGraph = dailySeries(transactions.filter((transaction) => transaction.status === 'paid'), (transaction) => transaction.paid_at || transaction.created_at, (transaction) => transaction.amount)
+  return <div className="page-stack collector-dashboard">
+    <div className="welcome-row dashboard-welcome"><div><span className="eyebrow">COLLECTOR PORTAL</span><h2>Turn e-waste into value</h2><p>Capture a lot and connect with verified recyclers.</p></div><Link to="/collector/create-lot" className="button button-primary"><PackagePlus size={17} /> Add E-Waste</Link></div>
     {queue.length > 0 && <div className="sync-strip"><div><span className="sync-dot" />{queue.length} {queue.length === 1 ? 'lot' : 'lots'} waiting to sync</div><button className="button button-soft" type="button" onClick={retrySync} disabled={!online || syncing}><RefreshCw size={15} className={syncing ? 'spin' : ''} /> {syncing ? 'Syncing' : 'Sync now'}</button></div>}
     <div className="metric-grid metric-grid-four">
-      <Metric label="Active lots" value={rows.filter((lot) => lot.status !== 'completed').length + queue.length} note="In progress" />
-      <Metric label="Offers received" value={rows.reduce((sum, lot) => sum + (lot.offers?.filter((offer) => offer.status === 'pending').length || 0), 0)} note="From recyclers" />
-      <Metric label="Completed sales" value={completed.length} note="All time" />
-      <Metric label="Earnings" value={formatCurrency(earnings)} note="Recorded sales" icon={Wallet} />
+      <Metric label="Active Lots" value={rows.filter((lot) => lot.status !== 'completed').length + queue.length} note="In progress" icon={Boxes} tone="mint" graph={activeLotsGraph} />
+      <Metric label="Offers Received" value={rows.reduce((sum, lot) => sum + (lot.offers?.filter((offer) => offer.status === 'pending').length || 0), 0)} note="From recyclers" icon={HandCoins} tone="lavender" graph={offersGraph} />
+      <Metric label="Completed Sales" value={completed.length} note="All time" icon={CircleCheck} tone="blue" graph={completedSalesGraph} />
+      <Metric label="Earnings" value={formatCurrency(earnings)} note="Recorded sales" icon={Wallet} tone="amber" graph={earningsGraph} />
     </div>
     <div className="dashboard-grid">
-      <Panel><PageHeading title="Recent lots" action={<Link className="text-link" to="/collector/lots">View all</Link>} />
-        {loading ? <LoadingState /> : error ? <ErrorState message="Lots couldn't be loaded." /> : rows.length ? <div className="compact-list">{rows.slice(0, 4).map((lot) => <Link className="compact-row" to={`/collector/lots/${lot.id}`} key={lot.id}><span className="lot-mark">{lot.materials?.name?.slice(0, 2) || 'EW'}</span><span className="compact-main"><strong>{lot.reference_id}</strong><small>{lot.materials?.name} · {lot.approximate_weight} kg</small></span><StatusBadge status={lot.status} /><ChevronRight size={16} /></Link>)}</div> : <EmptyState title="No lots yet">Add your first e-waste lot to get started.</EmptyState>}
+      <Panel className="dashboard-surface recent-lots-panel"><DashboardSectionHeading icon={ClipboardList} title="Recent lots" tone="mint" action={<Link className="text-link" to="/collector/lots">View all</Link>} />
+        {loading ? <LoadingState /> : error ? <ErrorState message="Lots couldn't be loaded." /> : rows.length ? <div className="compact-list">{rows.slice(0, 4).map((lot) => <Link className="compact-row recent-lot-row" to={`/collector/lots/${lot.id}`} key={lot.id}><span className="lot-mark recent-lot-mark">{lot.materials?.name?.slice(0, 2) || 'EW'}</span><span className="compact-main recent-lot-copy"><strong>{lot.reference_id}</strong><small>{lot.materials?.name} · {lot.approximate_weight} kg</small></span><span className="recent-lot-status"><StatusBadge status={lot.status} /><ChevronRight size={17} /></span></Link>)}</div> : <EmptyState title="No lots yet">Add your first e-waste lot to get started.</EmptyState>}
       </Panel>
-      <Panel><PageHeading title="Quick actions" /><div className="quick-action-list">
+      <Panel className="dashboard-surface"><DashboardSectionHeading icon={Zap} title="Quick actions" tone="amber" /><div className="quick-action-list">
         <Link className="button button-primary" to="/collector/create-lot"><PackagePlus size={16} /> Sell scrap</Link>
         <Link className="button button-cream" to="/collector/recyclers"><ShieldCheck size={16} /> Find a recycler</Link>
         <Link className="button button-quiet" to="/collector/transactions"><Wallet size={16} /> View earnings</Link>
@@ -277,16 +325,6 @@ export function CollectorLotDetailsPage() {
       {offers.length ? <div className="offer-grid">{offers.map((offer) => <div className="offer-panel" key={offer.id}><div className="offer-top"><span className="recycler-avatar">{offer.recyclers?.business_name?.slice(0, 1) || 'R'}</span><StatusBadge status={offer.recyclers?.authorization_status} /></div><strong>{offer.recyclers?.business_name || 'Verified recycler'}</strong><span className="offer-price">{formatCurrency(offer.offer_value)}</span><StatusBadge status={offer.status} />{offer.status === 'pending' && lot.status !== 'offer_accepted' && <button className="button button-primary" disabled={Boolean(accepting)} onClick={() => acceptOffer(offer.id)}>{accepting === offer.id ? 'Accepting…' : 'Accept offer'}</button>}</div>)}</div> : <EmptyState title="No offers yet">We'll show recycler offers here when they respond.</EmptyState>}
     </Panel>
     <Panel><PageHeading title="Lot traceability" description="Recorded events from this lot's journey." /><TraceTimeline events={events} /></Panel>
-  </div>
-}
-
-export function CollectorOffersPage() {
-  const { data: lots, loading, error } = useLoad(getOwnLots)
-  if (loading) return <LoadingState />
-  if (error) return <ErrorState message="Offers couldn't be loaded." />
-  const lotsWithOffers = (lots || []).filter((lot) => lot.offers?.length)
-  return <div className="page-stack"><PageHeading title="Offers" description="Compare offers from verified recyclers." />
-    {lotsWithOffers.length ? lotsWithOffers.map((lot) => <Panel key={lot.id}><div className="lot-title-row"><div><span className="eyebrow">{lot.reference_id}</span><h2>{lot.materials?.name}</h2><p>Approx. {lot.approximate_weight} kg</p></div><Link className="text-link" to={`/collector/lots/${lot.id}`}>Lot details <ChevronRight size={15} /></Link></div><div className="offer-grid">{lot.offers.map((offer) => <div className="offer-panel" key={offer.id}><div className="offer-top"><span className="recycler-avatar">{offer.recyclers?.business_name?.slice(0, 1) || 'R'}</span><StatusBadge status={offer.recyclers?.authorization_status} /></div><strong>{offer.recyclers?.business_name || 'Verified recycler'}</strong><span className="offer-price">{formatCurrency(offer.offer_value)}</span><StatusBadge status={offer.status} /></div>)}</div></Panel>) : <Panel><EmptyState title="No offers yet">We'll show offers here after recyclers respond to your lots.</EmptyState></Panel>}
   </div>
 }
 

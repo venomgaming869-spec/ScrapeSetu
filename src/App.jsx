@@ -7,7 +7,6 @@ import AuthPage from './pages/AuthPage.jsx'
 const CollectorDashboard = lazy(() => import('./pages/collector/CollectorPages.jsx').then((module) => ({ default: module.CollectorDashboard })))
 const CollectorLotDetailsPage = lazy(() => import('./pages/collector/CollectorPages.jsx').then((module) => ({ default: module.CollectorLotDetailsPage })))
 const CollectorLotsPage = lazy(() => import('./pages/collector/CollectorPages.jsx').then((module) => ({ default: module.CollectorLotsPage })))
-const CollectorOffersPage = lazy(() => import('./pages/collector/CollectorPages.jsx').then((module) => ({ default: module.CollectorOffersPage })))
 const CollectorRecyclerListPage = lazy(() => import('./pages/collector/CollectorPages.jsx').then((module) => ({ default: module.CollectorRecyclerListPage })))
 const CollectorTransactionDetailPage = lazy(() => import('./pages/collector/CollectorPages.jsx').then((module) => ({ default: module.CollectorTransactionDetailPage })))
 const CollectorTransactionsPage = lazy(() => import('./pages/collector/CollectorPages.jsx').then((module) => ({ default: module.CollectorTransactionsPage })))
@@ -52,7 +51,7 @@ export default function App() {
                 <Route path="create-lot" element={<Suspense fallback={<div className="load-state">Loading…</div>}><CreateLotPage /></Suspense>} />
                 <Route path="lots" element={<Suspense fallback={<div className="load-state">Loading…</div>}><CollectorLotsPage /></Suspense>} />
                 <Route path="lots/:id" element={<Suspense fallback={<div className="load-state">Loading…</div>}><CollectorLotDetailsPage /></Suspense>} />
-                <Route path="offers" element={<Suspense fallback={<div className="load-state">Loading…</div>}><CollectorOffersPage /></Suspense>} />
+                <Route path="offers" element={<Navigate to="/collector" replace />} />
                 <Route path="recyclers" element={<Suspense fallback={<div className="load-state">Loading…</div>}><CollectorRecyclerListPage /></Suspense>} />
                 <Route path="transactions" element={<Suspense fallback={<div className="load-state">Loading…</div>}><CollectorTransactionsPage /></Suspense>} />
                 <Route path="transactions/:id" element={<Suspense fallback={<div className="load-state">Loading…</div>}><CollectorTransactionDetailPage /></Suspense>} />

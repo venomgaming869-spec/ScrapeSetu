@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Recycle, UserRound } from 'lucide-react'
+import landingBackdrop from '../../figmaUI/banner.png'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
@@ -42,9 +43,46 @@ export default function AuthPage({ register = false, landing = false }) {
   }
 
   if (landing && !isRegister) return <main className="landing-page">
-    <header className="landing-header"><Link to="/" className="auth-brand"><strong>SCRAPSETU</strong><span>KABADIWALA CONNECT</span></Link><Link className="button button-primary" to="/login">Sign in <ArrowRight size={15} /></Link></header>
-    <section className="landing-hero"><span className="portal-label">CLEAN & GREEN TECHNOLOGY · SIH 2026</span><h1>ScrapSetu</h1><p>Bridging informal e-waste collection with formal recycling.</p><div className="landing-actions"><Link className="button landing-primary" to="/register">Get started <ArrowRight size={16} /></Link><a className="button landing-secondary" href="#how-it-works">How it works</a></div><div className="landing-flow" id="how-it-works"><span>Collect</span><i /><span>Value</span><i /><span>Match</span><i /><span>Sell</span><i /><span>Trace</span><i /><span>Recycle</span></div></section>
-    <section className="landing-note"><div><span className="eyebrow">A FORMAL RECYCLING PATHWAY</span><h2>From local collection to authorized recycling.</h2></div><p>ScrapSetu gives collectors indicative price visibility, connects each lot to compatible verified recyclers, and records offers, handover, payment, and traceability in one place.</p></section>
+    <header className="landing-header">
+      <Link to="/" className="landing-brand" aria-label="ScrapSetu home">
+        <span className="landing-brand-mark"><Recycle size={25} strokeWidth={2.4} /></span>
+        <span className="landing-brand-copy"><strong>SCRAP<br />SETU</strong><small>E-WASTE NETWORK</small></span>
+      </Link>
+      <nav className="landing-nav" aria-label="Main navigation">
+        <a href="#home">Home</a><a href="#how-it-works">How it works</a><a href="#network">The network</a><a href="#impact">Impact</a>
+      </nav>
+      <div className="landing-header-actions">
+        <span className="landing-network-status"><i />Collector + recycler network</span>
+        <Link className="landing-signin" to="/login">Sign in <ArrowUpRight size={15} /></Link>
+      </div>
+    </header>
+    <section className="landing-hero" id="home">
+      <img className="landing-backdrop" src={landingBackdrop} alt="" />
+      <div className="landing-hero-copy">
+        <span className="landing-kicker"><i /> SMART E-WASTE CONNECTOR</span>
+        <h1><span>SCRAP</span><span>SETU</span></h1>
+        <p>Connecting collectors with responsible recyclers.</p>
+        <div className="landing-actions">
+          <Link className="landing-primary" to="/register">Enter ScrapSetu <ArrowRight size={17} /></Link>
+          <Link className="landing-secondary" to="/login">Recycler login <ArrowUpRight size={15} /></Link>
+        </div>
+        <div className="landing-flow" id="how-it-works"><span>Collect</span><i /><span>Value</span><i /><span>Match</span><i /><span>Sell</span><i /><span>Trace</span><i /><span>Recycle</span></div>
+      </div>
+      <div className="landing-role-picker" id="network">
+        <span className="landing-choose">CHOOSE YOUR SIDE</span>
+        <Link to="/register" className="landing-role-card landing-role-collector">
+          <span className="landing-role-icon"><UserRound size={20} /></span>
+          <span className="landing-role-copy"><small>FOR COLLECTORS</small><strong>Collector</strong><span>Collect and connect e-waste.</span></span>
+          <span className="landing-role-arrow"><ArrowUpRight size={17} /></span>
+        </Link>
+        <Link to="/login" className="landing-role-card landing-role-recycler">
+          <span className="landing-role-icon"><Recycle size={20} /></span>
+          <span className="landing-role-copy"><small>FOR RECYCLERS</small><strong>Recycler</strong><span>Receive and recycle responsibly.</span></span>
+          <span className="landing-role-arrow"><ArrowUpRight size={17} /></span>
+        </Link>
+      </div>
+    </section>
+    <section className="landing-note" id="impact"><div className="landing-note-inner"><div><span className="eyebrow">A FORMAL RECYCLING PATHWAY</span><h2>From local collection to authorized recycling.</h2></div><p>ScrapSetu gives collectors indicative price visibility, connects each lot to compatible verified recyclers, and records offers, handover, payment, and traceability in one place.</p></div></section>
   </main>
 
   return (
