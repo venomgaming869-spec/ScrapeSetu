@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    allowedHosts: ["oregon-item-bobby-overhead.trycloudflare.com"],},
+    allowedHosts: ["pipes-addressing-sat-davidson.trycloudflare.com"],},
   build: {
     rollupOptions: {
       output: {
